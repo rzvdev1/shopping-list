@@ -1,8 +1,10 @@
 const itemForm = document.getElementById('item-form');
 const itemInput = document.getElementById('item-input');
 const itemList = document.getElementById('item-list');
+const clearBtn = document.getElementById('clear');
+const itemFilter = document.getElementById('filter');
 
-const addItem = (e) => {
+const onAddItemSubmit = (e) => {
   e.preventDefault();
 
   const newItem = itemInput.value;
@@ -12,17 +14,39 @@ const addItem = (e) => {
     return;
   }
 
+  addItemToDOM(newItem);
+
+  addItemToStorage(newItem);
+
+  checkUI();
+
+  itemInput.value = '';
+};
+
+function addItemToDOM(item) {
   const li = document.createElement('li');
-  li.appendChild(document.createTextNode(newItem));
+  li.appendChild(document.createTextNode(item));
 
   const button = createButton('remove-item btn-link text-red');
 
   li.appendChild(button);
 
   itemList.appendChild(li);
+}
 
-  itemInput.value = '';
-};
+function addItemToStorage(item) {
+  let itemsFromStorage;
+
+  if (localStorage.getItem('items') === null) {
+    itemsFromStorage = [];
+  } else {
+    itemsFromStorage = JSON.parse(localStorage.getItem('items'));
+  }
+
+  itemsFromStorage.push(item);
+
+  localStorage.setItem('items', JSON.stringify(itemsFromStorage));
+}
 
 function createButton(classes) {
   const button = document.createElement('button');
@@ -38,4 +62,54 @@ function createIcon(classes) {
   return icon;
 }
 
-itemForm.addEventListener('submit', addItem);
+function removeItem(e) {
+  if (e.target.parentElement.classList.contains('remove-item')) {
+    if (confirm('Are you sure?')) {
+      e.target.parentElement.parentElement.remove();
+
+      checkUI();
+    }
+  }
+}
+
+function clearItems(e) {
+  while (itemList.firstChild) {
+    itemList.removeChild(itemList.firstChild);
+  }
+
+  checkUI();
+}
+
+function filterItems(e) {
+  const items = document.querySelectorAll('li');
+  const text = e.target.value.toLowerCase();
+
+  items.forEach((item) => {
+    const itemName = item.firstChild.textContent.toLowerCase();
+
+    if (itemName.indexOf(text) != -1) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
+
+function checkUI() {
+  const items = document.querySelectorAll('li');
+
+  if (items.length === 0) {
+    clearBtn.style.display = 'none';
+    itemFilter.style.display = 'none';
+  } else {
+    clearBtn.style.display = 'block';
+    itemFilter.style.display = 'block';
+  }
+}
+
+itemForm.addEventListener('submit', onAddItemSubmit);
+itemList.addEventListener('click', removeItem);
+clearBtn.addEventListener('click', clearItems);
+itemFilter.addEventListener('input', filterItems);
+
+checkUI();
